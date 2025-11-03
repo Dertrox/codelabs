@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bienestar • Obesidad</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="data:,"/>
+</head>
+<body class="antialiased">
+  <div id="root"></div>
+
+  <!-- React + Babel (CDN) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useMemo, useRef, useState } = React;
+
+    const Card = ({ className = "", children }) => (
+      <div className={`rounded-3xl bg-white/70 backdrop-blur border border-neutral-200 shadow-sm ${className}`}>{children}</div>
+    );
+    const Pill = ({ children }) => (
+      <span className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-3 py-1 text-sm bg-white/70">{children}</span>
+    );
+    const AnimatedBlob = ({ className = "" }) => (
+      <div className={`relative h-24 w-full overflow-hidden rounded-2xl ${className}`} aria-hidden>
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-pink-200 via-rose-100 to-amber-100"></div>
+        <div className="absolute right-4 top-4 h-3 w-3 animate-bounce rounded-full bg-rose-400/70"></div>
+        <div className="absolute bottom-3 left-6 h-2 w-2 animate-bounce rounded-full bg-amber-500/70 [animation-delay:200ms]"></div>
+      </div>
+    );
+
+    function App() {
+      const pasosRef = useRef(null);
+      const [slide, setSlide] = useState(0);
+      const pasos = [
+        { titulo: "1) Conócete y define metas",
+          items: ["Calcula tu IMC y perímetro de cintura.","Elige 1 meta concreta para 4–6 semanas.","Registra alimentación, sueño y actividad 3 días."]},
+        { titulo: "2) Plan 80/20 + movimiento",
+          items: ["3 comidas + 1 colación con proteína y fibra.","Plato saludable: 1/2 verduras, 1/4 proteína, 1/4 carbo integral.","150–300 min/sem + 2 sesiones de fuerza."]},
+        { titulo: "3) Acompañamiento y seguimiento",
+          items: ["Apoyo psicológico para imagen corporal y hambre emocional.","Consulta médica si hay comorbilidades.","Revisa progreso semanal y ajusta con compasión."]},
+      ];
+
+      const [kg, setKg] = useState(70);
+      const [cm, setCm] = useState(170);
+      const bmi = useMemo(() => {
+        const m = Number(cm)/100;
+        const v = Number(kg)/(m*m || 1);
+        return Number.isFinite(v) ? Math.round(v*10)/10 : 0;
+      }, [kg, cm]);
+      const clasif = useMemo(() => {
+        if (!bmi) return "—";
+        if (bmi < 18.5) return "Bajo peso";
+        if (bmi < 25) return "Normopeso";
+        if (bmi < 30) return "Sobrepeso";
+        if (bmi < 35) return "Obesidad I";
+        if (bmi < 40) return "Obesidad II";
+        return "Obesidad III";
+      }, [bmi]);
+
+      const [sentir, setSentir] = useState("");
+
+      return (
+        <div className="min-h-screen w-full bg-rose-50/70 p-5 md:p-10">
+          <div className="mx-auto max-w-6xl space-y-6">
+            {/* HERO */}
+            <Card className="p-6 md:p-10">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-5">
+                <div className="md:col-span-3">
+                  <h1 className="text-4xl md:text-5xl font-serif text-neutral-800 leading-tight">
+                    El primer paso<br/> hacia tu bienestar
+                  </h1>
+                  <p className="mt-4 max-w-prose text-neutral-600">
+                    La prevención y el tratamiento de la obesidad inician con acompañamiento emocional,
+                    hábitos sostenibles y pequeños pasos diarios.
+                  </p>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <Pill><span className="text-xl">☀️</span><span>Prevención con apoyo emocional</span></Pill>
+                    <Pill><span className="text-xl">🌿</span><span>Hábitos amables y sostenibles</span></Pill>
+                  </div>
+                  <button
+                    onClick={() => pasosRef.current?.scrollIntoView({behavior:"smooth"})}
+                    className="mt-6 inline-flex items-center gap-2 rounded-full bg-rose-500 px-5 py-2 text-white shadow hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-300">
+                    Empieza con los pasos →
+                  </button>
+                </div>
+                <div className="md:col-span-2 flex items-center justify-center">
+                  <div className="relative w-full max-w-xs">
+                    <AnimatedBlob />
+                    <div className="pointer-events-none absolute -bottom-6 right-4 rotate-6 rounded-2xl border bg-white/80 px-3 py-2 text-sm shadow">
+                      <span className="mr-1">💗</span> ¡Acompañamiento cercano!
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Objetivo + Datos + Apoyo */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              <Card className="p-6">
+                <h2 className="text-2xl font-semibold text-neutral-800">Objetivo del proyecto</h2>
+                <p className="mt-3 text-neutral-700">
+                  Promover el bienestar integral y prevenir complicaciones de la obesidad con
+                  educación clara, herramientas prácticas y enfoque de salud mental compasivo.
+                </p>
+                <ul className="mt-3 list-disc pl-5 text-neutral-700 space-y-1">
+                  <li>Educar con datos epidemiológicos actuales.</li>
+                  <li>Fortalecer autoestima e imagen corporal.</li>
+                  <li>Guiar un tratamiento paso a paso, realista y seguro.</li>
+                </ul>
+              </Card>
+
+              <Card className="p-6">
+                <h2 className="text-2xl font-semibold text-neutral-800">Datos epidemiológicos</h2>
+                <p className="mt-3 text-neutral-700">
+                  La obesidad es una condición crónica prevalente; aumenta riesgo de DM2, HTA y apnea del sueño.
+                </p>
+                <div className="mt-4"><AnimatedBlob /></div>
+              </Card>
+
+              <Card className="p-6">
+                <h2 className="text-2xl font-semibold text-neutral-800">Apoyo psicológico</h2>
+                <p className="mt-3 text-neutral-700">
+                  Habilidades para manejar hambre emocional, crítica corporal y perfeccionismo con enfoque compasivo.
+                </p>
+                <div className="mt-4"><AnimatedBlob /></div>
+              </Card>
+            </div>
+
+            {/* IMC */}
+            <Card className="p-6">
+              <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-3">
+                <div className="md:col-span-2">
+                  <h3 className="text-2xl font-semibold text-neutral-800">Calculadora de IMC</h3>
+                  <p className="mt-2 text-neutral-700">Orientativa (no reemplaza consulta clínica).</p>
+                  <div className="mt-4 grid grid-cols-2 gap-4 max-w-md">
+                    <label className="text-sm text-neutral-600">Peso (kg)
+                      <input type="number" value={kg} onChange={(e)=>setKg(Number(e.target.value))}
+                        className="mt-1 w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-300"/>
+                    </label>
+                    <label className="text-sm text-neutral-600">Estatura (cm)
+                      <input type="number" value={cm} onChange={(e)=>setCm(Number(e.target.value))}
+                        className="mt-1 w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-300"/>
+                    </label>
+                  </div>
+                  <p className="mt-3 text-neutral-700"><strong>IMC:</strong> <span className="font-semibold">{bmi}</span> — {clasif}</p>
+                  <p className="mt-1 text-xs text-neutral-500">* Considera también perímetro de cintura.</p>
+                </div>
+                <div className="md:col-span-1">
+                  <div className="rounded-2xl border bg-white p-4 text-sm leading-relaxed text-neutral-700">
+                    <p className="font-semibold">Tips rápidos</p>
+                    <ul className="mt-2 list-disc pl-4 space-y-1">
+                      <li>Proteína en cada comida.</li>
+                      <li>La mitad del plato: verduras/frutas.</li>
+                      <li>7–10k pasos/día.</li>
+                      <li>Duerme 7–9 h.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Paso a paso */}
+            <Card ref={pasosRef} className="p-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-semibold text-neutral-800">Cómo empezar tu tratamiento paso a paso</h3>
+                <div className="flex items-center gap-2">
+                  <button onClick={()=>setSlide((s)=>(s-1+pasos.length)%pasos.length)} className="rounded-full border px-3 py-1 hover:bg-rose-50">←</button>
+                  <button onClick={()=>setSlide((s)=>(s+1)%pasos.length)} className="rounded-full border px-3 py-1 hover:bg-rose-50">→</button>
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div className="md:col-span-2">
+                  <div className="rounded-2xl border bg-white p-5">
+                    <h4 className="text-xl font-semibold text-neutral-800">{pasos[slide].titulo}</h4>
+                    <ul className="mt-3 list-disc pl-5 text-neutral-700 space-y-2">
+                      {pasos[slide].items.map((it,i)=><li key={i}>{it}</li>)}
+                    </ul>
+                  </div>
+                </div>
+                <div className="md:col-span-1">
+                  <AnimatedBlob className="h-40" />
+                  <div className="mt-3 flex items-center justify-center gap-2">
+                    {pasos.map((_,i)=>(
+                      <button key={i} onClick={()=>setSlide(i)}
+                        className={`h-3 w-3 rounded-full border ${i===slide? "bg-rose-500 border-rose-500":"bg-white"}`}/>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Video + Emoción */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              <Card className="p-6 md:col-span-2">
+                <h3 className="text-2xl font-semibold text-neutral-800">Videíto animado</h3>
+                <p className="mt-1 text-neutral-700">Reemplaza el embed por tu animación.</p>
+                <div className="mt-4 aspect-video w-full overflow-hidden rounded-2xl border">
+                  <iframe className="h-full w-full"
+                          src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                          title="Video educativo obesidad"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowfullscreen></iframe>
+                </div>
+              </Card>
+
+              <Card className="p-6 md:col-span-1">
+                <h3 className="text-2xl font-semibold text-neutral-800">¿Cómo te sentiste al ver el video?</h3>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  {[
+                    {k:"motivado",label:"Motivado/a"},
+                    {k:"tranquilo",label:"Más tranquilo/a"},
+                    {k:"dudoso",label:"Con dudas"},
+                    {k:"triste",label:"Triste"},
+                  ].map(op=>(
+                    <button key={op.k} onClick={()=>setSentir(op.k)}
+                      className="rounded-2xl border px-3 py-3 text-sm shadow-sm hover:bg-rose-50 data-[active=true]:border-rose-500"
+                      data-active={sentir===op.k}>{op.label}</button>
+                  ))}
+                </div>
+                {sentir && <p className="mt-3 text-sm text-neutral-700">Gracias por compartir: <b>{sentir}</b>. Si necesitas apoyo, revisa nuestras redes.</p>}
+              </Card>
+            </div>
+
+            {/* Redes */}
+            <Card className="p-6">
+              <h3 className="text-2xl font-semibold text-neutral-800">Redes de comunicación</h3>
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+                <a href="mailto:contacto@bienestar.org" className="rounded-full border px-4 py-2 hover:bg-rose-50">📧 contacto@bienestar.org</a>
+                <a href="#" className="rounded-full border px-4 py-2 hover:bg-rose-50">📱 WhatsApp</a>
+                <a href="#" className="rounded-full border px-4 py-2 hover:bg-rose-50">📸 Instagram</a>
+                <a href="#" className="rounded-full border px-4 py-2 hover:bg-rose-50">🎥 TikTok</a>
+              </div>
+              <p className="mt-4 text-xs text-neutral-500">Aviso: Contenido informativo; no sustituye valoración profesional.</p>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
