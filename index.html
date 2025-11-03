@@ -7,9 +7,16 @@
   <meta name="color-scheme" content="light dark" />
   <!-- Favicon embebido (evita 404) -->
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop stop-color='%23fb7185'/%3E%3Cstop stop-color='%23fde68a' offset='1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='44' fill='url(%23g)'/%3E%3C/svg%3E">
+
+  <!-- Tailwind (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js para el gráfico de peso -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lottie (opcional, no rompe si no carga) -->
+  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+
   <style>
-    html,body,#root{height:100%}
+    html,body{height:100%}
     ::selection{background:#fb7185;color:#fff}
     .bg-soft{
       background: radial-gradient(1200px 600px at 10% 0%, #ffe4e6 0, transparent 60%),
@@ -19,352 +26,495 @@
       animation: drift 15s ease-in-out infinite alternate;
     }
     @keyframes drift{from{background-position:0 0,0 0,0 0}to{background-position:20px -30px,-30px -10px,30px 40px}}
+    /* Respiración */
+    #breathBall{transition:transform .8s ease-in-out}
+    /* Botones pill */
+    .pill{border:1px solid rgb(229 231 235); border-radius:9999px; padding:.25rem .75rem; background:rgba(255,255,255,.7)}
+    .dark .pill{border-color:rgb(64 64 64); background:rgba(23,23,23,.6)}
+    /* Playlist */
+    .item-active{border-color:#f43f5e!important}
   </style>
 </head>
 <body class="antialiased">
   <!-- Sonido ambiente -->
   <audio id="ambAudio" src="https://cdn.pixabay.com/download/audio/2021/09/16/audio_0b4d2f88f6.mp3?filename=forest-birds-ambient-116199.mp3" loop preload="none"></audio>
 
-  <noscript style="display:block;padding:16px;background:#fee2e2;color:#7f1d1d;text-align:center">
-    Necesitas activar JavaScript para ver esta página.
-  </noscript>
-  <div id="root"></div>
+  <div class="min-h-screen bg-soft dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 p-5 md:p-10">
+    <div class="mx-auto max-w-6xl space-y-6">
 
-  <!-- React + ReactDOM + Babel -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Recharts -->
-  <script src="https://unpkg.com/recharts/umd/Recharts.min.js"></script>
-  <!-- Lottie webcomponent -->
-  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
-
-  <!-- IMPORTANTE: data-presets para funcionar en local -->
-  <script type="text/babel" data-presets="env,react">
-    const {useEffect,useMemo,useRef,useState} = React;
-    const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = Recharts;
-
-    const Card = ({className="",children}) => (
-      <div className={`rounded-3xl bg-white/70 dark:bg-neutral-900/60 backdrop-blur border border-neutral-200 dark:border-neutral-800 shadow-sm ${className}`}>{children}</div>
-    );
-    const Pill = ({children}) => (
-      <span className="inline-flex items-center gap-2 rounded-full border border-neutral-200 dark:border-neutral-700 px-3 py-1 text-sm bg-white/70 dark:bg-neutral-900/60">{children}</span>
-    );
-    const AnimatedBlob = () => (
-      <div className="relative h-24 w-full overflow-hidden rounded-2xl" aria-hidden>
-        <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-pink-200 via-rose-100 to-amber-100 dark:from-rose-900/60 dark:via-rose-800/40 dark:to-amber-800/40"></div>
-        <div className="absolute right-4 top-4 h-3 w-3 animate-bounce rounded-full bg-rose-400/70"></div>
-        <div className="absolute bottom-3 left-6 h-2 w-2 animate-bounce rounded-full bg-amber-500/70" style={{animationDelay:"200ms"}}></div>
+      <!-- Topbar -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="pill">🌿 Bienestar</span>
+          <span class="pill">Obesidad</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="peaceBtn" class="rounded-full border px-3 py-2 text-sm hover:bg-rose-50 dark:hover:bg-neutral-900">🔈 Paz OFF</button>
+          <input id="vol" type="range" min="0" max="1" step="0.05" value="0.25" class="w-24 accent-rose-500" title="Volumen">
+          <button id="themeBtn" class="rounded-full border px-3 py-2 text-sm hover:bg-rose-50 dark:hover:bg-neutral-900">☀️ Claro</button>
+        </div>
       </div>
-    );
-    const LottieBox = ({src}) => (
-      <div className="rounded-2xl border bg-white/70 dark:bg-neutral-900/60 p-2">
-        {/* Para React + custom element, evita style objeto */}
-        <lottie-player src={src} background="transparent" speed="1" loop autoplay style="width:100%;height:160px"></lottie-player>
-      </div>
-    );
 
-    const useLocal = (key,initial)=>{
-      const [state,setState]=useState(()=>{try{const v=localStorage.getItem(key);return v?JSON.parse(v):initial}catch{return initial}});
-      useEffect(()=>{try{localStorage.setItem(key,JSON.stringify(state))}catch{}},[key,state]);
-      return [state,setState];
+      <!-- HERO -->
+      <div class="rounded-3xl bg-white/70 dark:bg-neutral-900/60 backdrop-blur border border-neutral-200 dark:border-neutral-800 shadow-sm p-6 md:p-10">
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-5">
+          <div class="md:col-span-3">
+            <h1 class="text-4xl md:text-5xl font-serif leading-tight">El primer paso<br>hacia tu bienestar</h1>
+            <p class="mt-4 max-w-prose text-neutral-700 dark:text-neutral-300">
+              Tratamiento de obesidad con enfoque integral: hábitos sostenibles, apoyo emocional y pasos diarios.
+            </p>
+            <div class="mt-6 flex gap-3">
+              <a href="#pasos" class="inline-flex items-center gap-2 rounded-full bg-rose-500 px-5 py-2 text-white shadow hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-300">Empezar →</a>
+              <a href="#respira" class="inline-flex items-center gap-2 rounded-full border px-5 py-2 hover:bg-rose-50 dark:hover:bg-neutral-900">Respirar</a>
+            </div>
+          </div>
+          <div class="md:col-span-2">
+            <div class="rounded-2xl border bg-white/70 dark:bg-neutral-900/60 p-2">
+              <lottie-player src="https://lottie.host/0e1d94dc-3d43-42f6-a78b-7b1a6f4f9a89/Ht0kRzP1m6.json" background="transparent" speed="1" loop autoplay style="width:100%;height:180px"></lottie-player>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Objetivo / Datos / Apoyo -->
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div class="rounded-3xl bg-white/70 dark:bg-neutral-900/60 border p-6">
+          <h2 class="text-2xl font-semibold">Objetivo</h2>
+          <p class="mt-3 text-neutral-700 dark:text-neutral-300">Promover bienestar integral y prevenir complicaciones con educación clara y apoyo psicológico.</p>
+        </div>
+        <div class="rounded-3xl bg-white/70 dark:bg-neutral-900/60 border p-6">
+          <h2 class="text-2xl font-semibold">Datos epidemiológicos</h2>
+          <p class="mt-3 text-neutral-700 dark:text-neutral-300">La obesidad es frecuente y aumenta el riesgo de DM2, HTA y SAHOS. El entorno importa.</p>
+        </div>
+        <div class="rounded-3xl bg-white/70 dark:bg-neutral-900/60 border p-6">
+          <h2 class="text-2xl font-semibold">Apoyo psicológico</h2>
+          <p class="mt-3 text-neutral-700 dark:text-neutral-300">Manejo de hambre emocional, autocrítica y prevención de recaídas con metas pequeñas.</p>
+        </div>
+      </div>
+
+      <!-- Calculadoras -->
+      <div class="rounded-3xl bg-white/70 dark:bg-neutral-900/60 border p-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="md:col-span-2">
+            <h3 class="text-2xl font-semibold">Calculadora de IMC</h3>
+            <p class="text-sm text-neutral-600 dark:text-neutral-400">Orientativa; no sustituye valoración clínica.</p>
+            <div class="mt-4 grid grid-cols-2 gap-4 max-w-md">
+              <label class="text-sm">Peso (kg)
+                <input id="kg" type="number" value="70" class="mt-1 w-full rounded-xl border px-3 py-2 dark:bg-neutral-900 dark:border-neutral-700">
+              </label>
+              <label class="text-sm">Estatura (cm)
+                <input id="cm" type="number" value="170" class="mt-1 w-full rounded-xl border px-3 py-2 dark:bg-neutral-900 dark:border-neutral-700">
+              </label>
+            </div>
+            <p class="mt-3"><strong>IMC:</strong> <span id="bmiVal" class="font-semibold">—</span> — <span id="bmiTxt">—</span></p>
+          </div>
+          <div>
+            <h3 class="text-2xl font-semibold">TDEE (Gasto diario)</h3>
+            <div class="mt-3 grid grid-cols-2 gap-3">
+              <label class="text-sm">Sexo
+                <select id="sexo" class="mt-1 w-full rounded-xl border px-3 py-2 dark:bg-neutral-900 dark:border-neutral-700">
+                  <option value="F">Femenino</option><option value="M">Masculino</option>
+                </select>
+              </label>
+              <label class="text-sm">Edad
+                <input id="edad" type="number" value="30" class="mt-1 w-full rounded-xl border px-3 py-2 dark:bg-neutral-900 dark:border-neutral-700">
+              </label>
+              <label class="col-span-2 text-sm">Actividad
+                <select id="act" class="mt-1 w-full rounded-xl border px-3 py-2 dark:bg-neutral-900 dark:border-neutral-700">
+                  <option value="1.2">Sedentario (×1.2)</option>
+                  <option value="1.375" selected>Ligero (×1.375)</option>
+                  <option value="1.55">Moderado (×1.55)</option>
+                  <option value="1.725">Alto (×1.725)</option>
+                  <option value="1.9">Muy alto (×1.9)</option>
+                </select>
+              </label>
+            </div>
+            <p class="mt-3 text-sm">BMR ≈ <b id="bmr">—</b> kcal · TDEE ≈ <b id="tdee">—</b> kcal/día</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Respiración -->
+      <div id="respira" class="rounded-3xl bg-white/70 dark:bg-neutral-900/60 border p-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+          <div class="md:col-span-2">
+            <h3 class="text-2xl font-semibold">Respiración 4–7–8</h3>
+            <p class="text-sm text-neutral-600 dark:text-neutral-400">Ejercicio para calmar. Sigue el círculo.</p>
+            <div class="mt-4 flex items-center gap-5">
+              <div class="relative h-28 w-28">
+                <div id="breathBall" class="absolute inset-0 rounded-full bg-rose-200/70 dark:bg-rose-900/40"></div>
+                <div class="absolute inset-3 rounded-full bg-white/70 dark:bg-neutral-900/60 border"></div>
+              </div>
+              <div>
+                <p id="breathPhase" class="text-xl font-semibold">Inhala</p>
+                <p class="text-neutral-600 dark:text-neutral-300">Cuenta: <span id="breathCount">4</span>s</p>
+                <p class="text-xs text-neutral-500 mt-1">3–5 ciclos para relajar.</p>
+              </div>
+            </div>
+          </div>
+          <div class="md:col-span-1">
+            <div class="rounded-2xl border bg-white/70 dark:bg-neutral-900/60 p-2">
+              <lottie-player src="https://assets5.lottiefiles.com/private_files/lf30_zx2t4n.json" background="transparent" speed="1" loop autoplay style="width:100%;height:160px"></lottie-player>
+            </div>
+            <p class="text-xs text-neutral-500 mt-2">Activa «Paz ON» 🌲</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pasos -->
+      <div id="pasos" class="rounded-3xl bg-white/70 dark:bg-neutral-900/60 border p-6">
+        <div class="flex items-center justify-between">
+          <h3 class="text-2xl font-semibold">Cómo empezar tu tratamiento</h3>
+          <div class="flex gap-2">
+            <button id="prevStep" class="rounded-full border px-3 py-1 hover:bg-rose-50 dark:hover:bg-neutral-900">←</button>
+            <button id="nextStep" class="rounded-full border px-3 py-1 hover:bg-rose-50 dark:hover:bg-neutral-900">→</button>
+          </div>
+        </div>
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="md:col-span-2 rounded-2xl border bg-white dark:bg-neutral-900 p-5">
+            <h4 id="stepTitle" class="text-xl font-semibold">1) Conócete y define metas</h4>
+            <ul id="stepList" class="mt-3 list-disc pl-5 space-y-2 text-neutral-700 dark:text-neutral-300"></ul>
+          </div>
+          <div class="md:col-span-1">
+            <div class="rounded-2xl border bg-white/70 dark:bg-neutral-900/60 p-2">
+              <lottie-player src="https://assets6.lottiefiles.com/private_files/lf30_ikvz7q7z.json" background="transparent" speed="1" loop autoplay style="width:100%;height:160px"></lottie-player>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Videos + Cuestionario -->
+      <div class="rounded-3xl bg-white/70 dark:bg-neutral-900/60 border p-6">
+        <h3 class="text-2xl font-semibold">Videos educativos</h3>
+        <p class="text-sm text-neutral-600 dark:text-neutral-400">Mira los videos y luego responde el cuestionario de bienestar.</p>
+
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="md:col-span-2">
+            <div class="relative overflow-hidden rounded-2xl border">
+              <video id="mainVideo" controls playsinline preload="metadata" class="w-full aspect-video bg-black"></video>
+            </div>
+            <div class="mt-2 flex flex-wrap gap-2 text-sm">
+              <a id="dlLink" class="rounded-full border px-3 py-1 hover:bg-rose-50 dark:hover:bg-neutral-900" href="#" download>⬇️ Descargar</a>
+              <button id="fsBtn" class="rounded-full border px-3 py-1 hover:bg-rose-50 dark:hover:bg-neutral-900">⛶ Pantalla completa</button>
+            </div>
+          </div>
+          <div class="md:col-span-1">
+            <div id="playlist" class="rounded-2xl border bg-white/70 dark:bg-neutral-900/60 p-2"></div>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <button id="openQuiz" class="rounded-full border px-4 py-2 hover:bg-rose-50 dark:hover:bg-neutral-900">📝 Responder cuestionario</button>
+          <div id="quizBox" class="hidden mt-3">
+            <h4 class="text-xl font-semibold">Cuestionario breve de bienestar emocional</h4>
+            <p class="text-sm text-neutral-600 dark:text-neutral-400">Últimas 2 semanas (0 Nunca · 1 A veces · 2 Frecuentemente · 3 Casi siempre)</p>
+            <div id="quizList" class="mt-3 space-y-3"></div>
+            <div class="mt-4 flex items-center gap-3">
+              <span id="quizResult" class="inline-flex items-center rounded-full px-3 py-1 text-sm bg-gray-100 text-gray-800">Resultado: 0 / 24 • nivel bajo</span>
+              <button id="quizReset" class="rounded-full border px-3 py-1 hover:bg-rose-50 dark:hover:bg-neutral-900">Reiniciar</button>
+            </div>
+            <div id="quizAdvice" class="mt-3 text-sm text-neutral-700 dark:text-neutral-300"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Registro de peso + hábitos -->
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div class="rounded-3xl bg-white/70 dark:bg-neutral-900/60 border p-6 md:col-span-2">
+          <h3 class="text-2xl font-semibold">Registro de peso</h3>
+          <div class="mt-3 flex flex-wrap items-end gap-3">
+            <label class="text-sm">Fecha
+              <input id="wDate" type="date" class="mt-1 rounded-xl border px-3 py-2 dark:bg-neutral-900 dark:border-neutral-700">
+            </label>
+            <label class="text-sm">Peso (kg)
+              <input id="wVal" type="number" class="mt-1 rounded-xl border px-3 py-2 dark:bg-neutral-900 dark:border-neutral-700">
+            </label>
+            <button id="wAdd" class="rounded-xl border px-4 py-2 hover:bg-rose-50 dark:hover:bg-neutral-900">Agregar</button>
+          </div>
+          <div class="mt-4">
+            <canvas id="wChart" height="240"></canvas>
+          </div>
+        </div>
+        <div class="rounded-3xl bg-white/70 dark:bg-neutral-900/60 border p-6 md:col-span-1">
+          <h3 class="text-2xl font-semibold">Plan de hábitos (semana)</h3>
+          <div id="habitsGrid" class="mt-3 grid grid-cols-8 gap-2 text-xs"></div>
+        </div>
+      </div>
+
+      <!-- FAQ / Contacto -->
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div class="rounded-3xl bg-white/70 dark:bg-neutral-900/60 border p-6 md:col-span-2">
+          <h3 class="text-2xl font-semibold">Preguntas frecuentes</h3>
+          <details class="mt-3 group">
+            <summary class="cursor-pointer select-none rounded-xl border px-4 py-2 group-open:bg-rose-50 dark:group-open:bg-neutral-900">¿El IMC basta para evaluar salud?</summary>
+            <p class="mt-2 px-4 text-sm text-neutral-700 dark:text-neutral-300">No. Úsalo con cintura, clínica y laboratorios.</p>
+          </details>
+          <details class="mt-3 group">
+            <summary class="cursor-pointer select-none rounded-xl border px-4 py-2 group-open:bg-rose-50 dark:group-open:bg-neutral-900">¿Necesito suplementos?</summary>
+            <p class="mt-2 px-4 text-sm text-neutral-700 dark:text-neutral-300">No de rutina. Prioriza alimentos reales, proteína y sueño.</p>
+          </details>
+        </div>
+        <div class="rounded-3xl bg-white/70 dark:bg-neutral-900/60 border p-6 md:col-span-1">
+          <h3 class="text-2xl font-semibold">Contacto</h3>
+          <form class="mt-3 grid gap-2" onsubmit="event.preventDefault(); alert('¡Gracias! Te contactaremos pronto.');">
+            <input class="rounded-xl border px-3 py-2 dark:bg-neutral-900 dark:border-neutral-700" placeholder="Tu nombre" required />
+            <input type="email" class="rounded-xl border px-3 py-2 dark:bg-neutral-900 dark:border-neutral-700" placeholder="Email" required />
+            <textarea class="rounded-xl border px-3 py-2 dark:bg-neutral-900 dark:border-neutral-700" placeholder="Mensaje" rows="3" required></textarea>
+            <button class="mt-1 rounded-xl bg-rose-500 px-4 py-2 text-white hover:bg-rose-600">Enviar</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="rounded-3xl bg-white/70 dark:bg-neutral-900/60 border p-4 text-center text-sm">
+        <p>Redes: 📧 contacto@bienestar.org · 📱 WhatsApp · 📸 Instagram · 🎥 TikTok</p>
+        <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Contenido informativo; no sustituye valoración profesional.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ---------- Tema y audio ---------- */
+    const themeBtn = document.getElementById('themeBtn');
+    const peaceBtn = document.getElementById('peaceBtn');
+    const vol = document.getElementById('vol');
+    const amb = document.getElementById('ambAudio');
+
+    const LS = (k,v)=>v===undefined?JSON.parse(localStorage.getItem(k)||'null'):localStorage.setItem(k,JSON.stringify(v));
+
+    // Tema
+    const savedDark = LS('dark') ?? false;
+    document.documentElement.classList.toggle('dark', savedDark);
+    themeBtn.textContent = savedDark ? '☾ Oscuro' : '☀️ Claro';
+    themeBtn.onclick = ()=> {
+      const now = !document.documentElement.classList.contains('dark');
+      document.documentElement.classList.toggle('dark', now);
+      themeBtn.textContent = now ? '☾ Oscuro' : '☀️ Claro';
+      LS('dark', now);
     };
 
-    function BreathingCoach(){
-      const phases=[{label:"Inhala",seconds:4},{label:"Sostén",seconds:7},{label:"Exhala",seconds:8}];
-      const [idx,setIdx]=useState(0); const [sec,setSec]=useState(phases[0].seconds);
-      useEffect(()=>{const t=setInterval(()=>{setSec(s=>{if(s>1)return s-1;setIdx(i=>(i+1)%phases.length);return phases[(idx+1)%phases.length].seconds})},1000);return()=>clearInterval(t)},[idx]);
-      const phase=phases[idx].label; const scale=phase==="Inhala"?1.25:phase==="Sostén"?1.35:0.9;
-      return (<div className="flex items-center gap-5">
-        <div className="relative h-28 w-28">
-          <div className="absolute inset-0 rounded-full bg-rose-200/70 dark:bg-rose-900/40 transition-transform duration-700 ease-in-out" style={{transform:`scale(${scale})`}}></div>
-          <div className="absolute inset-3 rounded-full bg-white/70 dark:bg-neutral-900/60 border"></div>
-        </div>
-        <div><p className="text-xl font-semibold">{phase}</p><p className="text-neutral-600 dark:text-neutral-300">Cuenta: {sec}s</p><p className="text-xs text-neutral-500 mt-1">3–5 ciclos para relajar.</p></div>
-      </div>);
+    // Audio paz
+    const savedPeace = LS('peace') ?? false;
+    const savedVol = LS('vol') ?? 0.25;
+    vol.value = savedVol; amb.volume = savedVol;
+    peaceBtn.textContent = savedPeace ? '🔊 Paz ON' : '🔈 Paz OFF';
+    if (savedPeace) amb.play().catch(()=>{});
+    peaceBtn.onclick = ()=> {
+      const on = peaceBtn.textContent.includes('OFF');
+      peaceBtn.textContent = on? '🔊 Paz ON':'🔈 Paz OFF';
+      if (on) amb.play().catch(()=>{}); else amb.pause();
+      LS('peace', on);
+    };
+    vol.oninput = e => { amb.volume = +e.target.value; LS('vol', +e.target.value); };
+
+    /* ---------- IMC / TDEE ---------- */
+    const kg = document.getElementById('kg');
+    const cm = document.getElementById('cm');
+    const sexo = document.getElementById('sexo');
+    const edad = document.getElementById('edad');
+    const act = document.getElementById('act');
+    const bmiVal = document.getElementById('bmiVal');
+    const bmiTxt = document.getElementById('bmiTxt');
+    const bmrEl = document.getElementById('bmr');
+    const tdeeEl = document.getElementById('tdee');
+
+    function updateCalcs(){
+      const w = +kg.value || 0, h = +cm.value || 1, e = +edad.value || 0;
+      const m = h/100, bmi = w/(m*m);
+      const bmiR = Math.round(bmi*10)/10;
+      bmiVal.textContent = isFinite(bmiR)? bmiR : '—';
+      const cls = !isFinite(bmiR)? '—' : bmiR<18.5?'Bajo peso':bmiR<25?'Normopeso':bmiR<30?'Sobrepeso':bmiR<35?'Obesidad I':bmiR<40?'Obesidad II':'Obesidad III';
+      bmiTxt.textContent = cls;
+      const bmr = Math.round(sexo.value==='M' ? (10*w + 6.25*h - 5*e + 5) : (10*w + 6.25*h - 5*e - 161));
+      const tdee = Math.round(bmr * (+act.value));
+      bmrEl.textContent = isFinite(bmr)? bmr : '—';
+      tdeeEl.textContent = isFinite(tdee)? tdee : '—';
     }
+    [kg,cm,sexo,edad,act].forEach(el=> el.addEventListener('input', updateCalcs));
+    updateCalcs();
 
-    function fmtDur(s){ if(!s||!isFinite(s)) return "--:--"; const m=Math.floor(s/60); const ss=Math.round(s%60); return `${m}:${ss.toString().padStart(2,"0")}`; }
-    function VideoGallery({videos,onEnded}){
-      const [i,setI]=useState(0);
-      const [dur,setDur]=useState(Array(videos.length).fill(null));
-      const ref=useRef(null);
-      useEffect(()=>{
-        const v=ref.current; if(!v) return;
-        const meta=()=> setDur(d=>{const c=[...d]; c[i]=v.duration; return c});
-        const end =()=> onEnded?.();
-        v.addEventListener("loadedmetadata",meta); v.addEventListener("ended",end);
-        return ()=>{v.removeEventListener("loadedmetadata",meta); v.removeEventListener("ended",end);}
-      },[i,onEnded]);
-      return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-2">
-            <div className="relative overflow-hidden rounded-2xl border">
-              <video ref={ref} key={videos[i].src} controls playsinline preload="metadata" poster={videos[i].poster||""} className="w-full aspect-video bg-black">
-                <source src={videos[i].src} type="video/mp4" />
-                Tu navegador no soporta video HTML5.
-              </video>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-2 text-sm">
-              <a className="rounded-full border px-3 py-1 hover:bg-rose-50 dark:hover:bg-neutral-900" href={videos[i].src} download>⬇️ Descargar</a>
-              <button className="rounded-full border px-3 py-1 hover:bg-rose-50 dark:hover:bg-neutral-900" onClick={()=>ref.current?.requestFullscreen?.()}>⛶ Pantalla completa</button>
-            </div>
-          </div>
-          <div className="md:col-span-1">
-            <div className="rounded-2xl border bg-white/70 dark:bg-neutral-900/60 p-2">
-              {videos.map((v,idx)=>(
-                <button key={v.src} onClick={()=>setI(idx)}
-                  className={`w-full text-left rounded-xl px-3 py-2 mb-2 border hover:bg-rose-50 dark:hover:bg-neutral-900 ${idx===i?"border-rose-500":"border-neutral-200 dark:border-neutral-700"}`}>
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{v.title}</span>
-                    <span className="text-xs text-neutral-500">{fmtDur(dur[idx])}</span>
-                  </div>
-                  {v.desc && <p className="text-xs text-neutral-600 dark:text-neutral-400">{v.desc}</p>}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      );
+    /* ---------- Respiración 4-7-8 ---------- */
+    const ball = document.getElementById('breathBall');
+    const phaseEl = document.getElementById('breathPhase');
+    const countEl = document.getElementById('breathCount');
+    const phases = [{label:'Inhala',sec:4,scale:1.25},{label:'Sostén',sec:7,scale:1.35},{label:'Exhala',sec:8,scale:.9}];
+    let p=0, s=phases[0].sec;
+    function breathTick(){
+      if (s<=1){ p=(p+1)%phases.length; s=phases[p].sec; }
+      else s--;
+      const ph = phases[p];
+      phaseEl.textContent = ph.label;
+      countEl.textContent = s;
+      ball.style.transform = `scale(${ph.scale})`;
     }
+    setInterval(breathTick,1000);
 
-    function App(){
-      const [dark,setDark]=useLocal("theme-dark",false);
-      useEffect(()=>{const r=document.documentElement; dark?r.classList.add("dark"):r.classList.remove("dark")},[dark]);
-      const audioRef=useRef(null); useEffect(()=>{audioRef.current=document.getElementById("ambAudio")},[]);
-      const [peace,setPeace]=useLocal("peace-mode",false); const [vol,setVol]=useLocal("peace-vol",0.25);
-      useEffect(()=>{if(!audioRef.current) return; audioRef.current.volume=vol; peace?audioRef.current.play().catch(()=>{}):audioRef.current.pause()},[peace,vol]);
-
-      const [kg,setKg]=useLocal("kg",70), [cm,setCm]=useLocal("cm",170);
-      const [sexo,setSexo]=useLocal("sexo","F"), [edad,setEdad]=useLocal("edad",30), [actividad,setAct]=useLocal("actividad",1.375);
-      const bmi=useMemo(()=>{const m=cm/100; const v=kg/(m*m||1); return isFinite(v)?Math.round(v*10)/10:0},[kg,cm]);
-      const clasif=useMemo(()=>!bmi?"—":bmi<18.5?"Bajo peso":bmi<25?"Normopeso":bmi<30?"Sobrepeso":bmi<35?"Obesidad I":bmi<40?"Obesidad II":"Obesidad III",[bmi]);
-      const bmr=useMemo(()=>Math.round((sexo==="M"? (10*kg + 6.25*cm - 5*edad + 5) : (10*kg + 6.25*cm - 5*edad - 161))),[sexo,kg,cm,edad]);
-      const tdee=useMemo(()=>Math.round(bmr*actividad),[bmr,actividad]);
-
-      const defaultHabits=[{id:"agua",nombre:"Agua (8 vasos)",semana:Array(7).fill(false)},{id:"pasos",nombre:"10k pasos",semana:Array(7).fill(false)},{id:"fuerza",nombre:"Fuerza (2x)",semana:Array(7).fill(false)},{id:"descanso",nombre:"Dormir 7–9h",semana:Array(7).fill(false)}];
-      const [habitos,setHabitos]=useLocal("habitos",defaultHabits);
-      const toggleDia=(hid,idx)=>setHabitos(H=>H.map(h=>h.id===hid?{...h,semana:h.semana.map((v,i)=>i===idx?!v:v)}:h));
-      const [pesoRegistro,setPesoRegistro]=useLocal("pesoRegistro",[{fecha:new Date().toISOString().slice(0,10),peso:kg}]);
-      const [newWeight,setNewWeight]=useState(kg), [newDate,setNewDate]=useState(new Date().toISOString().slice(0,10));
-      const addWeight=()=>{if(!newDate||!newWeight)return; setPesoRegistro(arr=>[...arr.filter(p=>p.fecha!==newDate),{fecha:newDate,peso:Number(newWeight)}].sort((a,b)=>a.fecha.localeCompare(b.fecha)))};
-
-      const [slide,setSlide]=useState(0);
-      const pasos=[{titulo:"1) Conócete y define metas",items:["Calcula IMC y cintura.","1 meta concreta (4–6 semanas).","Registra 3 días de base."]},{titulo:"2) Plan 80/20 + movimiento",items:["3 comidas + 1 colación (proteína/fibra).","Plato: 1/2 verduras, 1/4 proteína, 1/4 carbo integral.","150–300 min/sem + 2x fuerza."]},{titulo:"3) Acompañamiento y seguimiento",items:["Apoyo psicológico.","Consulta si hay comorbilidades.","Revisiones semanales y ajustes amables."]}];
-
-      const qs=["Poco interés o placer en hacer cosas","Sensación de tristeza o decaimiento","Dificultad para dormir o dormir en exceso","Cansancio o poca energía","Cambios en el apetito","Sentirse mal consigo mismo/a","Dificultad para concentrarse","Inquietud o ansiedad"];
-      const [ans,setAns]=useLocal("quiz-ans",Array(qs.length).fill(0)); const score=ans.reduce((a,b)=>a+b,0);
-      const nivel=score<=7?"bajo":score<=15?"moderado":"alto"; const nivelColor={bajo:"bg-green-100 text-green-800",moderado:"bg-amber-100 text-amber-800",alto:"bg-rose-100 text-rose-800"}[nivel];
-      const [showQuiz,setShowQuiz]=useState(false);
-
-      /* VIDEOS — ahora rutas relativas (funciona en local y en hosting) */
-      const videos=[
-        { src: "videos/la-obesidad.mp4?v=4",        title:"La obesidad",          desc:"Introducción general" },
-        { src: "videos/que-es-la-obesidad.mp4?v=4", title:"¿Qué es la obesidad?", desc:"Conceptos clave"     },
-        { src: "videos/obesidad.mp4?v=4",           title:"Obesidad (extra)",     desc:"Recomendaciones"     },
-      ];
-
-      return (
-        <div className="min-h-screen w-full bg-soft dark:bg-neutral-950 p-5 md:p-10 text-neutral-900 dark:text-neutral-100">
-          <div className="mx-auto max-w-6xl space-y-6">
-            {/* Top bar */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3"><Pill>🌿 Bienestar</Pill><Pill>Obesidad</Pill></div>
-              <div className="flex items-center gap-2">
-                <button onClick={()=>setPeace(p=>!p)} className="rounded-full border px-3 py-2 text-sm hover:bg-rose-50 dark:hover:bg-neutral-900" title="Sonido ambiente">{peace?"🔊 Paz ON":"🔈 Paz OFF"}</button>
-                <input title="Volumen" type="range" min="0" max="1" step="0.05" value={vol} onChange={e=>setVol(Number(e.target.value))} className="w-24 accent-rose-500"/>
-                <button onClick={()=>setDark(d=>!d)} className="rounded-full border px-3 py-2 text-sm hover:bg-rose-50 dark:hover:bg-neutral-900">{dark?"☾ Oscuro":"☀️ Claro"}</button>
-              </div>
-            </div>
-
-            {/* HERO */}
-            <Card className="p-6 md:p-10">
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-5">
-                <div className="md:col-span-3">
-                  <h1 className="text-4xl md:text-5xl font-serif text-neutral-800 dark:text-neutral-100 leading-tight">El primer paso<br/> hacia tu bienestar</h1>
-                  <p className="mt-4 max-w-prose text-neutral-700 dark:text-neutral-300">Tratamiento de obesidad con enfoque integral: hábitos sostenibles, apoyo emocional y pequeños pasos diarios.</p>
-                  <div className="mt-5 flex flex-wrap gap-3"><Pill>☀️ Apoyo emocional</Pill><Pill>🧠 Salud mental</Pill><Pill>🥗 Hábitos sostenibles</Pill></div>
-                  <div className="mt-6 flex gap-3">
-                    <a href="#pasos" className="inline-flex items-center gap-2 rounded-full bg-rose-500 px-5 py-2 text-white shadow hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-300">Empezar →</a>
-                    <a href="#respira" className="inline-flex items-center gap-2 rounded-full border px-5 py-2 hover:bg-rose-50 dark:hover:bg-neutral-900">Respirar</a>
-                  </div>
-                </div>
-                <div className="md:col-span-2">
-                  <LottieBox src="https://lottie.host/0e1d94dc-3d43-42f6-a78b-7b1a6f4f9a89/Ht0kRzP1m6.json"/>
-                  <div className="mt-3"><AnimatedBlob/></div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Objetivo + Datos + Apoyo */}
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              <Card className="p-6"><h2 className="text-2xl font-semibold">Objetivo del proyecto</h2><p className="mt-3 text-neutral-700 dark:text-neutral-300">Promover bienestar integral y prevenir complicaciones: educación clara, herramientas prácticas y acompañamiento psicológico.</p><LottieBox src="https://assets5.lottiefiles.com/packages/lf20_touohxv0.json"/></Card>
-              <Card className="p-6"><h2 className="text-2xl font-semibold">Datos epidemiológicos</h2><p className="mt-3 text-neutral-700 dark:text-neutral-300">La obesidad es frecuente y aumenta riesgo de DM2, HTA y SAHOS. Importa el entorno.</p><LottieBox src="https://assets10.lottiefiles.com/packages/lf20_xlmz9xwm.json"/></Card>
-              <Card className="p-6"><h2 className="text-2xl font-semibold">Apoyo psicológico</h2><p className="mt-3 text-neutral-700 dark:text-neutral-300">Manejo de hambre emocional, auto-crítica y prevención de recaídas con metas pequeñas.</p><LottieBox src="https://assets5.lottiefiles.com/packages/lf20_q5pk6p1k.json"/></Card>
-            </div>
-
-            {/* Calculadoras */}
-            <Card className="p-6">
-              <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-3">
-                <div className="md:col-span-2">
-                  <h3 className="text-2xl font-semibold">Calculadora de IMC</h3>
-                  <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">Orientativa; no sustituye valoración clínica.</p>
-                  <div className="mt-4 grid grid-cols-2 gap-4 max-w-md">
-                    <label className="text-sm">Peso (kg)<input type="number" value={kg} onChange={e=>setKg(Number(e.target.value))} className="mt-1 w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-300 dark:bg-neutral-900 dark:border-neutral-700"/></label>
-                    <label className="text-sm">Estatura (cm)<input type="number" value={cm} onChange={e=>setCm(Number(e.target.value))} className="mt-1 w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-300 dark:bg-neutral-900 dark:border-neutral-700"/></label>
-                  </div>
-                  <p className="mt-3"><strong>IMC:</strong> <span className="font-semibold">{bmi}</span> — {clasif}</p>
-                </div>
-                <div className="md:col-span-1">
-                  <h3 className="text-2xl font-semibold">TDEE (Gasto diario)</h3>
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <label className="text-sm">Sexo
-                      <select value={sexo} onChange={e=>setSexo(e.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2 dark:bg-neutral-900 dark:border-neutral-700"><option value="F">Femenino</option><option value="M">Masculino</option></select>
-                    </label>
-                    <label className="text-sm">Edad
-                      <input type="number" value={edad} onChange={e=>setEdad(Number(e.target.value))} className="mt-1 w-full rounded-xl border px-3 py-2 dark:bg-neutral-900 dark:border-neutral-700"/>
-                    </label>
-                    <label className="col-span-2 text-sm">Actividad
-                      <select value={actividad} onChange={e=>setAct(Number(e.target.value))} className="mt-1 w-full rounded-xl border px-3 py-2 dark:bg-neutral-900 dark:border-neutral-700">
-                        <option value="1.2">Sedentario (×1.2)</option><option value="1.375">Ligero (×1.375)</option><option value="1.55">Moderado (×1.55)</option><option value="1.725">Alto (×1.725)</option><option value="1.9">Muy alto (×1.9)</option>
-                      </select>
-                    </label>
-                  </div>
-                  <p className="mt-3 text-sm">BMR ≈ <b>{bmr}</b> kcal · TDEE ≈ <b>{tdee}</b> kcal/día</p>
-                </div>
-              </div>
-            </Card>
-
-            {/* Respiración */}
-            <Card id="respira" className="p-6">
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                <div className="md:col-span-2"><h3 className="text-2xl font-semibold">Respiración 4–7–8</h3><p className="text-sm text-neutral-600 dark:text-neutral-400">Ejercicio para calmar. Sigue el círculo.</p><div className="mt-4"><BreathingCoach/></div></div>
-                <div className="md:col-span-1"><LottieBox src="https://assets5.lottiefiles.com/private_files/lf30_zx2t4n.json"/><p className="text-xs text-neutral-500 mt-2">Activa «Paz ON» 🌲</p></div>
-              </div>
-            </Card>
-
-            {/* Paso a paso */}
-            <Card id="pasos" className="p-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-semibold">Cómo empezar tu tratamiento</h3>
-                <div className="flex items-center gap-2"><button onClick={()=>setSlide(s=>(s-1+pasos.length)%pasos.length)} className="rounded-full border px-3 py-1 hover:bg-rose-50 dark:hover:bg-neutral-900">←</button><button onClick={()=>setSlide(s=>(s+1)%pasos.length)} className="rounded-full border px-3 py-1 hover:bg-rose-50 dark:hover:bg-neutral-900">→</button></div>
-              </div>
-              <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-3">
-                <div className="md:col-span-2 rounded-2xl border bg-white dark:bg-neutral-900 p-5"><h4 className="text-xl font-semibold">{pasos[slide].titulo}</h4><ul className="mt-3 list-disc pl-5 space-y-2 text-neutral-700 dark:text-neutral-300">{pasos[slide].items.map((it,i)=><li key={i}>{it}</li>)}</ul></div>
-                <div className="md:col-span-1"><div className="rounded-2xl border bg-white/70 dark:bg-neutral-900/60 p-2"><lottie-player src="https://assets6.lottiefiles.com/private_files/lf30_ikvz7q7z.json" background="transparent" speed="1" loop autoplay style="width:100%;height:160px"></lottie-player></div><div className="mt-3 flex items-center justify-center gap-2">{pasos.map((_,i)=><span key={i} className={`h-2 w-2 rounded-full border ${i===slide?"bg-rose-500 border-rose-500":"bg-white dark:bg-neutral-900"}`}></span>)}</div></div>
-              </div>
-            </Card>
-
-            {/* VIDEOS + CUESTIONARIO */}
-            <Card className="p-6">
-              <h3 className="text-2xl font-semibold">Videos educativos</h3>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">Mira los videos y luego responde el cuestionario de bienestar.</p>
-              <div className="mt-4"><VideoGallery videos={videos} onEnded={()=>setShowQuiz(true)}/></div>
-
-              <div className="mt-4">
-                {!showQuiz ? (
-                  <button className="rounded-full border px-4 py-2 hover:bg-rose-50 dark:hover:bg-neutral-900" onClick={()=>setShowQuiz(true)}>📝 Responder cuestionario</button>
-                ) : (
-                  <div className="mt-2">
-                    <h4 className="text-xl font-semibold">Cuestionario breve de bienestar emocional</h4>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Últimas 2 semanas (0 Nunca · 1 A veces · 2 Frecuentemente · 3 Casi siempre)</p>
-                    <div className="mt-3 space-y-3">
-                      {["Poco interés o placer en hacer cosas","Sensación de tristeza o decaimiento","Dificultad para dormir o dormir en exceso","Cansancio o poca energía","Cambios en el apetito","Sentirse mal consigo mismo/a","Dificultad para concentrarse","Inquietud o ansiedad"].map((q,i)=>(
-                        <div key={i} className="rounded-xl border p-3">
-                          <p className="font-medium">{i+1}. {q}</p>
-                          <div className="mt-2 flex flex-wrap gap-2 text-sm">
-                            {[0,1,2,3].map(v=>(
-                              <button key={v} onClick={()=>setAns(A=>{const B=[...A]; B[i]=v; return B;})}
-                                className={`rounded-full border px-3 py-1 ${ans[i]===v?"bg-rose-500 text-white border-rose-500":"hover:bg-rose-50 dark:hover:bg-neutral-900"}`}>
-                                {v} {["Nunca","A veces","Frecuentemente","Casi siempre"][v]}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-4 flex items-center gap-3">
-                      <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm ${nivelColor}`}>Resultado: {score} / 24 • nivel {nivel}</span>
-                      <button onClick={()=>setAns(Array(8).fill(0))} className="rounded-full border px-3 py-1 hover:bg-rose-50 dark:hover:bg-neutral-900">Reiniciar</button>
-                    </div>
-                    <div className="mt-3 text-sm text-neutral-700 dark:text-neutral-300">
-                      {nivel==="bajo" && <p>💚 Bien: mantén rutinas saludables y apoyo social.</p>}
-                      {nivel==="moderado" && <p>👉 Suma respiración diaria, límites amables y consulta si los síntomas persisten.</p>}
-                      {nivel==="alto" && <p>⚠️ Busca orientación profesional. Si hay ideas de hacerte daño o crisis, contacta servicios de emergencia o líneas de ayuda.</p>}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            {/* Hábitos + Peso */}
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              <Card className="p-6 md:col-span-2">
-                <h3 className="text-2xl font-semibold">Registro de peso</h3>
-                <div className="mt-3 flex flex-wrap items-end gap-3">
-                  <label className="text-sm">Fecha<input type="date" value={newDate} onChange={e=>setNewDate(e.target.value)} className="mt-1 rounded-xl border px-3 py-2 dark:bg-neutral-900 dark:border-neutral-700"/></label>
-                  <label className="text-sm">Peso (kg)<input type="number" value={newWeight} onChange={e=>setNewWeight(e.target.value)} className="mt-1 rounded-xl border px-3 py-2 dark:bg-neutral-900 dark:border-neutral-700"/></label>
-                  <button onClick={addWeight} className="rounded-xl border px-4 py-2 hover:bg-rose-50 dark:hover:bg-neutral-900">Agregar</button>
-                </div>
-                <div className="mt-4 h-64 w-full">
-                  <div style={{width:"100%",height:"100%"}}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={pesoRegistro} margin={{top:10,right:20,left:0,bottom:0}}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="fecha" tick={{fontSize:12}} />
-                        <YAxis tick={{fontSize:12}} domain={['dataMin-2','dataMax+2']} />
-                        <Tooltip />
-                        <Line type="monotone" dataKey="peso" strokeWidth={2} dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </Card>
-              <Card className="p-6 md:col-span-1">
-                <h3 className="text-2xl font-semibold">Plan de hábitos (semana)</h3>
-                <div className="mt-3 grid grid-cols-8 gap-2 text-xs">
-                  <div></div>
-                  {["L","M","X","J","V","S","D"].map((d,i)=>(<div key={i} className="text-center font-medium">{d}</div>))}
-                  {habitos.map(h=>(
-                    <React.Fragment key={h.id}>
-                      <div className="truncate pr-2 text-sm">{h.nombre}</div>
-                      {h.semana.map((v,i)=>(
-                        <button key={i} onClick={()=>toggleDia(h.id,i)} className={`aspect-square rounded-md border ${v?"bg-rose-500 text-white border-rose-500":"bg-white dark:bg-neutral-900"}`}>{v?"✓":""}</button>
-                      ))}
-                    </React.Fragment>
-                  ))}
-                </div>
-              </Card>
-            </div>
-
-            {/* FAQ + Contacto */}
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              <Card className="p-6 md:col-span-2">
-                <h3 className="text-2xl font-semibold">Preguntas frecuentes</h3>
-                <details className="mt-3 group"><summary className="cursor-pointer select-none rounded-xl border px-4 py-2 group-open:bg-rose-50 dark:group-open:bg-neutral-900">¿El IMC basta para evaluar salud?</summary><p className="mt-2 px-4 text-sm text-neutral-700 dark:text-neutral-300">No. Úsalo con cintura, clínica y laboratorios.</p></details>
-                <details className="mt-3 group"><summary className="cursor-pointer select-none rounded-xl border px-4 py-2 group-open:bg-rose-50 dark:group-open:bg-neutral-900">¿Necesito suplementos?</summary><p className="mt-2 px-4 text-sm text-neutral-700 dark:text-neutral-300">No de rutina. Prioriza alimentos reales, proteína y sueño.</p></details>
-              </Card>
-              <Card className="p-6 md:col-span-1">
-                <h3 className="text-2xl font-semibold">Contacto</h3>
-                <form className="mt-3 grid gap-2" onSubmit={(e)=>{e.preventDefault(); alert("¡Gracias! Te contactaremos pronto.");}}>
-                  <input className="rounded-xl border px-3 py-2 dark:bg-neutral-900 dark:border-neutral-700" placeholder="Tu nombre" required />
-                  <input type="email" className="rounded-xl border px-3 py-2 dark:bg-neutral-900 dark:border-neutral-700" placeholder="Email" required />
-                  <textarea className="rounded-xl border px-3 py-2 dark:bg-neutral-900 dark:border-neutral-700" placeholder="Mensaje" rows="3" required></textarea>
-                  <button className="mt-1 rounded-xl bg-rose-500 px-4 py-2 text-white hover:bg-rose-600">Enviar</button>
-                </form>
-              </Card>
-            </div>
-
-            <Card className="p-4 text-center text-sm">
-              <p>Redes: 📧 contacto@bienestar.org · 📱 WhatsApp · 📸 Instagram · 🎥 TikTok</p>
-              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Contenido informativo; no sustituye valoración profesional.</p>
-            </Card>
-          </div>
-        </div>
-      );
+    /* ---------- Pasos slider ---------- */
+    const steps = [
+      {title:"1) Conócete y define metas", items:["Calcula IMC y cintura.","1 meta concreta (4–6 semanas).","Registra 3 días de base."]},
+      {title:"2) Plan 80/20 + movimiento", items:["3 comidas + 1 colación (proteína/fibra).","Plato: 1/2 verduras, 1/4 proteína, 1/4 carbo integral.","150–300 min/sem + 2x fuerza."]},
+      {title:"3) Acompañamiento y seguimiento", items:["Apoyo psicológico.","Consulta si hay comorbilidades.","Revisiones semanales y ajustes amables."]},
+    ];
+    let stepIdx=0;
+    const stepTitle = document.getElementById('stepTitle');
+    const stepList = document.getElementById('stepList');
+    function renderStep(){
+      stepTitle.textContent = steps[stepIdx].title;
+      stepList.innerHTML = steps[stepIdx].items.map(li=>`<li>${li}</li>`).join('');
     }
+    document.getElementById('prevStep').onclick = ()=>{ stepIdx=(stepIdx-1+steps.length)%steps.length; renderStep(); };
+    document.getElementById('nextStep').onclick = ()=>{ stepIdx=(stepIdx+1)%steps.length; renderStep(); };
+    renderStep();
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+    /* ---------- Videos + playlist ---------- */
+    const videos = [
+      {src:'videos/la-obesidad.mp4?v=4', title:'La obesidad', desc:'Introducción general'},
+      {src:'videos/que-es-la-obesidad.mp4?v=4', title:'¿Qué es la obesidad?', desc:'Conceptos clave'},
+      {src:'videos/obesidad.mp4?v=4', title:'Obesidad (extra)', desc:'Recomendaciones'}
+    ];
+    const mainVideo = document.getElementById('mainVideo');
+    const playlist = document.getElementById('playlist');
+    const dlLink = document.getElementById('dlLink');
+    const fsBtn = document.getElementById('fsBtn');
+    let current = 0;
+
+    function setVideo(i){
+      current = i;
+      mainVideo.src = videos[i].src;
+      dlLink.href = videos[i].src;
+      [...playlist.querySelectorAll('button')].forEach((b,idx)=> b.classList.toggle('item-active', idx===i));
+    }
+    function fmtDur(sec){ if(!isFinite(sec)) return '--:--'; const m=Math.floor(sec/60), s=Math.round(sec%60); return `${m}:${s.toString().padStart(2,'0')}`; }
+
+    // Render playlist
+    videos.forEach((v,idx)=>{
+      const btn = document.createElement('button');
+      btn.className = 'w-full text-left rounded-xl px-3 py-2 mb-2 border hover:bg-rose-50 dark:hover:bg-neutral-900';
+      btn.innerHTML = `
+        <div class="flex items-center justify-between">
+          <span class="font-medium">${v.title}</span>
+          <span class="text-xs text-neutral-500" id="d${idx}">--:--</span>
+        </div>
+        <p class="text-xs text-neutral-600 dark:text-neutral-400">${v.desc||''}</p>
+      `;
+      btn.onclick = ()=> setVideo(idx);
+      playlist.appendChild(btn);
+
+      // calcular duración
+      const probe = document.createElement('video');
+      probe.preload = 'metadata';
+      probe.src = v.src;
+      probe.onloadedmetadata = ()=> {
+        document.getElementById(`d${idx}`).textContent = fmtDur(probe.duration);
+        probe.remove();
+      };
+    });
+    setVideo(0);
+
+    fsBtn.onclick = ()=> mainVideo.requestFullscreen && mainVideo.requestFullscreen();
+    // Autoabrir cuestionario al terminar cualquiera
+    const openQuizBtn = document.getElementById('openQuiz');
+    mainVideo.addEventListener('ended', ()=> document.getElementById('quizBox').classList.remove('hidden'));
+
+    /* ---------- Quiz bienestar ---------- */
+    const Qs = ["Poco interés o placer en hacer cosas","Sensación de tristeza o decaimiento","Dificultad para dormir o dormir en exceso","Cansancio o poca energía","Cambios en el apetito","Sentirse mal consigo mismo/a","Dificultad para concentrarse","Inquietud o ansiedad"];
+    const quizList = document.getElementById('quizList');
+    const quizBox = document.getElementById('quizBox');
+    const quizRes = document.getElementById('quizResult');
+    const quizAdvice = document.getElementById('quizAdvice');
+    const quizReset = document.getElementById('quizReset');
+    openQuizBtn.onclick = ()=> quizBox.classList.toggle('hidden');
+
+    let answers = JSON.parse(localStorage.getItem('quiz-ans')||'[]');
+    if (!answers.length) answers = Array(Qs.length).fill(0);
+
+    function renderQuiz(){
+      quizList.innerHTML = '';
+      Qs.forEach((q,i)=>{
+        const wrap = document.createElement('div');
+        wrap.className = 'rounded-xl border p-3';
+        wrap.innerHTML = `<p class="font-medium">${i+1}. ${q}</p>`;
+        const row = document.createElement('div');
+        row.className = 'mt-2 flex flex-wrap gap-2 text-sm';
+        [0,1,2,3].forEach(v=>{
+          const b = document.createElement('button');
+          b.className = `rounded-full border px-3 py-1 ${answers[i]===v?'bg-rose-500 text-white border-rose-500':'hover:bg-rose-50 dark:hover:bg-neutral-900'}`;
+          b.textContent = `${v} ${['Nunca','A veces','Frecuentemente','Casi siempre'][v]}`;
+          b.onclick = ()=> { answers[i]=v; localStorage.setItem('quiz-ans',JSON.stringify(answers)); updateQuiz(); renderQuiz(); };
+          row.appendChild(b);
+        });
+        wrap.appendChild(row);
+        quizList.appendChild(wrap);
+      });
+      updateQuiz();
+    }
+    function updateQuiz(){
+      const score = answers.reduce((a,b)=>a+b,0);
+      let nivel='bajo', cls='bg-green-100 text-green-800';
+      if (score>7 && score<=15){ nivel='moderado'; cls='bg-amber-100 text-amber-800'; }
+      if (score>15){ nivel='alto'; cls='bg-rose-100 text-rose-800'; }
+      quizRes.className = `inline-flex items-center rounded-full px-3 py-1 text-sm ${cls}`;
+      quizRes.textContent = `Resultado: ${score} / 24 • nivel ${nivel}`;
+      quizAdvice.innerHTML = nivel==='bajo'
+        ? '💚 Bien: mantén rutinas saludables y apoyo social.'
+        : nivel==='moderado'
+        ? '👉 Suma respiración diaria, límites amables y consulta si los síntomas persisten.'
+        : '⚠️ Busca orientación profesional. Si hay ideas de hacerte daño o crisis, contacta servicios de emergencia o líneas de ayuda.';
+    }
+    quizReset.onclick = ()=>{ answers = Array(Qs.length).fill(0); localStorage.setItem('quiz-ans',JSON.stringify(answers)); renderQuiz(); };
+    renderQuiz();
+
+    /* ---------- Hábitos ---------- */
+    const habitsGrid = document.getElementById('habitsGrid');
+    const days = ['L','M','X','J','V','S','D'];
+    let habits = JSON.parse(localStorage.getItem('habits')||'null') || [
+      {id:'agua', name:'Agua (8 vasos)', week:Array(7).fill(false)},
+      {id:'pasos', name:'10k pasos', week:Array(7).fill(false)},
+      {id:'fuerza', name:'Fuerza (2x)', week:Array(7).fill(false)},
+      {id:'descanso', name:'Dormir 7–9h', week:Array(7).fill(false)},
+    ];
+    function saveHabits(){ localStorage.setItem('habits', JSON.stringify(habits)); }
+    function renderHabits(){
+      habitsGrid.innerHTML = '<div></div>'+days.map(d=>`<div class="text-center font-medium">${d}</div>`).join('');
+      habits.forEach(h=>{
+        const name = document.createElement('div'); name.textContent=h.name; name.className='truncate pr-2 text-sm';
+        habitsGrid.appendChild(name);
+        h.week.forEach((v,idx)=>{
+          const b = document.createElement('button');
+          b.className = `aspect-square rounded-md border ${v?'bg-rose-500 text-white border-rose-500':'bg-white dark:bg-neutral-900'}`;
+          b.textContent = v?'✓':'';
+          b.onclick = ()=>{ h.week[idx]=!h.week[idx]; saveHabits(); renderHabits(); };
+          habitsGrid.appendChild(b);
+        });
+      });
+    }
+    renderHabits();
+
+    /* ---------- Peso + Chart ---------- */
+    const wDate = document.getElementById('wDate');
+    const wVal = document.getElementById('wVal');
+    const wAdd = document.getElementById('wAdd');
+    const today = new Date().toISOString().slice(0,10);
+    wDate.value = today; wVal.value = kg.value;
+
+    let wData = JSON.parse(localStorage.getItem('weights')||'null') || [{date:today, weight:+kg.value}];
+    const ctx = document.getElementById('wChart').getContext('2d');
+    let chart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: wData.map(p=>p.date), datasets: [{ label:'Peso (kg)', data:wData.map(p=>p.weight), borderWidth:2, tension:.3 }]},
+      options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:false}} }
+    });
+    function refreshChart(){
+      chart.data.labels = wData.map(p=>p.date);
+      chart.data.datasets[0].data = wData.map(p=>p.weight);
+      chart.update();
+      localStorage.setItem('weights', JSON.stringify(wData));
+    }
+    wAdd.onclick = ()=>{
+      if (!wDate.value || !wVal.value) return;
+      const item = {date:wDate.value, weight:+wVal.value};
+      wData = wData.filter(p=>p.date!==item.date).concat(item).sort((a,b)=>a.date.localeCompare(b.date));
+      refreshChart();
+    };
   </script>
 </body>
 </html>
