@@ -38,8 +38,9 @@
   </style>
 </head>
 <body class="antialiased bg-pastel">
-  <!-- Sonido ambiente -->
-  <audio id="ambAudio" loop preload="none" crossOrigin="anonymous" playsinline></audio>
+  <!-- Audio ambiente: OLEAJE SUAVE -->
+  <audio id="ambAudio" loop preload="none" crossorigin="anonymous" playsinline
+         src="https://archive.org/download/Red_Library_Water_1/R23-19-Ocean%20Waves%20Crashing.mp3"></audio>
 
   <div class="min-h-screen p-5 md:p-10">
     <div class="mx-auto max-w-6xl space-y-6" id="top">
@@ -284,11 +285,6 @@
     const peaceBtn=document.getElementById('peaceBtn');
     const vol=document.getElementById('vol');
     const amb=document.getElementById('ambAudio');
-    const AMBIENTS=[
-      "https://cdn.pixabay.com/download/audio/2021/09/16/audio_0b4d2f88f6.mp3?filename=forest-birds-ambient-116199.mp3",
-      "https://cdn.pixabay.com/download/audio/2022/03/15/audio_73a27a3c8a.mp3?filename=calm-nature-ambient-110997.mp3"
-    ];
-    amb.src=AMBIENTS[0];
 
     const savedDark=LS('dark')??false;
     document.documentElement.classList.toggle('dark',savedDark);
@@ -298,12 +294,14 @@
     const savedPeace=LS('peace')??false;
     const savedVol=LS('vol')??0.35;vol.value=savedVol;amb.volume=savedVol;
     peaceBtn.textContent=savedPeace?'🔊 Paz ON':'🔈 Paz OFF';
+
+    // Respeta autoplay policy: solo suena tras interacción
     document.addEventListener('click',()=>{ if(LS('peace')) tryPlay(); },{once:true});
     function tryPlay(){amb.muted=false;amb.currentTime=0;amb.play().catch(()=>{});}
     if(savedPeace) tryPlay();
+
     peaceBtn.onclick=()=>{const on=peaceBtn.textContent.includes('OFF');peaceBtn.textContent=on?'🔊 Paz ON':'🔈 Paz OFF';LS('peace',on);if(on) tryPlay(); else amb.pause();};
     vol.oninput=e=>{amb.volume=+e.target.value;LS('vol',+e.target.value);};
-    amb.addEventListener('error',()=>{const now=amb.src;const next=AMBIENTS.find(u=>u!==now);if(next){amb.src=next;if(LS('peace')) tryPlay();}});
 
     /* IMC/TDEE */
     const kg=document.getElementById('kg'), cm=document.getElementById('cm'), sexo=document.getElementById('sexo'), edad=document.getElementById('edad'), act=document.getElementById('act');
@@ -326,11 +324,11 @@
     document.getElementById('nextStep').onclick=()=>{stepIdx=(stepIdx+1)%steps.length;renderStep();};
     renderStep();
 
-    /* Videos con nombres corregidos (cache-bust ?v=9) */
+    /* Videos (nombres corregidos) */
     const videos=[
-      {src:'videos/la-obesidad.mp4?v=9',        title:'La obesidad',         desc:'Introducción general'},
-      {src:'videos/que-es-la-obesidad.mp4?v=9', title:'¿Qué es la obesidad?', desc:'Conceptos clave'},
-      {src:'videos/obesidad.mp4?v=9',           title:'Obesidad (extra)',     desc:'Recomendaciones'}
+      {src:'videos/la-obesidad.mp4?v=10',        title:'La obesidad',         desc:'Introducción general'},
+      {src:'videos/que-es-la-obesidad.mp4?v=10', title:'¿Qué es la obesidad?', desc:'Conceptos clave'},
+      {src:'videos/obesidad.mp4?v=10',           title:'Obesidad (extra)',     desc:'Recomendaciones'}
     ];
     const mainVideo=document.getElementById('mainVideo'), mainSrc=document.getElementById('mainSrc');
     const playlist=document.getElementById('playlist'), dlLink=document.getElementById('dlLink'), fsBtn=document.getElementById('fsBtn'), vTime=document.getElementById('vTime'), vSeek=document.getElementById('vSeek');
