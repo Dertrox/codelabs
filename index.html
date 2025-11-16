@@ -37,6 +37,9 @@
     .fab{position:fixed;right:16px;bottom:16px}
     /* Aspect-ratio helper */
     .aspect-video{aspect-ratio:16/9}
+
+    /* Oculta cuestionario de bienestar antiguo (no se borra, solo se esconde) */
+    #openQuiz, #quizBox { display:none !important; }
   </style>
 </head>
 <body class="antialiased bg-pastel">
@@ -143,6 +146,173 @@
             </div>
             <p class="mt-3 text-sm t-b">BMR ≈ <b id="bmr">—</b> kcal · TDEE ≈ <b id="tdee">—</b> kcal/día</p>
           </div>
+        </div>
+      </div>
+
+      <!-- Evaluación de riesgo cardiovascular, metabólico y emocional -->
+      <div id="riesgos" class="rounded-3xl card border p-6 shadow-soft">
+        <h3 class="text-2xl font-semibold t-h">Evaluación de riesgo</h3>
+        <p class="text-sm t-s">Herramientas de tamizaje orientativas. No sustituyen una valoración médica presencial.</p>
+
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Riesgo cardiovascular simple -->
+          <div class="rounded-2xl border card p-4">
+            <h4 class="text-lg font-semibold t-h">Riesgo cardiovascular</h4>
+            <p class="text-xs t-s">Basado en edad y factores como tabaquismo, presión y colesterol.</p>
+            <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
+              <label class="t-b">Edad
+                <input id="cvEdad" type="number" min="18" class="mt-1 w-full rounded-xl border px-2 py-1.5">
+              </label>
+              <label class="t-b">Sexo
+                <select id="cvSexo" class="mt-1 w-full rounded-xl border px-2 py-1.5">
+                  <option value="F">Femenino</option>
+                  <option value="M">Masculino</option>
+                </select>
+              </label>
+              <label class="t-b col-span-2">Fumas actualmente
+                <select id="cvFuma" class="mt-1 w-full rounded-xl border px-2 py-1.5">
+                  <option value="no">No</option>
+                  <option value="si">Sí</option>
+                </select>
+              </label>
+              <label class="t-b">PAS (mmHg)
+                <input id="cvPAS" type="number" class="mt-1 w-full rounded-xl border px-2 py-1.5" placeholder="Ej. 140">
+              </label>
+              <label class="t-b">Colesterol (mg/dL)
+                <input id="cvCol" type="number" class="mt-1 w-full rounded-xl border px-2 py-1.5" placeholder="Opcional">
+              </label>
+              <label class="t-b col-span-2 flex items-center gap-2">
+                <input id="cvDM" type="checkbox" class="rounded">
+                <span>Diabetes diagnosticada</span>
+              </label>
+            </div>
+            <button id="cvCalcBtn" class="mt-3 rounded-full border px-3 py-1.5 text-sm hover:bg-rose-50 t-b">Calcular riesgo CV</button>
+            <div class="mt-3 text-xs">
+              <span id="cvResult" class="inline-flex items-center rounded-full px-3 py-1 bg-slate-100 t-s">Completa los datos</span>
+              <p id="cvDetail" class="mt-1 t-s">Resultado orientativo para riesgo a 10 años.</p>
+            </div>
+          </div>
+
+          <!-- FINDRISC -->
+          <div class="rounded-2xl border card p-4">
+            <h4 class="text-lg font-semibold t-h">FINDRISC (riesgo metabólico)</h4>
+            <p class="text-xs t-s">Tamizaje para riesgo de diabetes tipo 2.</p>
+            <div class="mt-3 space-y-2 text-xs md:text-sm">
+              <label class="t-b block">Edad
+                <select class="findriscQ mt-1 w-full rounded-xl border px-2 py-1.5">
+                  <option value="" data-score="0">Selecciona…</option>
+                  <option value="1" data-score="0">&lt; 45 años</option>
+                  <option value="2" data-score="2">45–54 años</option>
+                  <option value="3" data-score="3">55–64 años</option>
+                  <option value="4" data-score="4">&gt;= 65 años</option>
+                </select>
+              </label>
+              <label class="t-b block">IMC aproximado
+                <select class="findriscQ mt-1 w-full rounded-xl border px-2 py-1.5">
+                  <option value="" data-score="0">Selecciona…</option>
+                  <option value="1" data-score="0">&lt; 25 kg/m²</option>
+                  <option value="2" data-score="1">25–30 kg/m²</option>
+                  <option value="3" data-score="3">&gt; 30 kg/m²</option>
+                </select>
+              </label>
+              <label class="t-b block">Actividad física ≥ 30 min/día
+                <select class="findriscQ mt-1 w-full rounded-xl border px-2 py-1.5">
+                  <option value="" data-score="0">Selecciona…</option>
+                  <option value="1" data-score="0">Sí</option>
+                  <option value="2" data-score="2">No</option>
+                </select>
+              </label>
+              <label class="t-b block">Consumo diario de frutas/verduras
+                <select class="findriscQ mt-1 w-full rounded-xl border px-2 py-1.5">
+                  <option value="" data-score="0">Selecciona…</option>
+                  <option value="1" data-score="0">Sí</option>
+                  <option value="2" data-score="1">No</option>
+                </select>
+              </label>
+              <label class="t-b block">Fármacos para hipertensión
+                <select class="findriscQ mt-1 w-full rounded-xl border px-2 py-1.5">
+                  <option value="" data-score="0">No</option>
+                  <option value="1" data-score="2">Sí</option>
+                </select>
+              </label>
+              <label class="t-b block">Glucosa alta previa
+                <select class="findriscQ mt-1 w-full rounded-xl border px-2 py-1.5">
+                  <option value="" data-score="0">No</option>
+                  <option value="1" data-score="5">Sí</option>
+                </select>
+              </label>
+              <label class="t-b block">Familiares con DM2
+                <select class="findriscQ mt-1 w-full rounded-xl border px-2 py-1.5">
+                  <option value="" data-score="0">No / ninguno</option>
+                  <option value="1" data-score="3">Padres, hermanos o hijos</option>
+                  <option value="2" data-score="5">Otros familiares cercanos</option>
+                </select>
+              </label>
+            </div>
+            <button id="frCalcBtn" class="mt-3 rounded-full border px-3 py-1.5 text-sm hover:bg-rose-50 t-b">Calcular FINDRISC</button>
+            <div class="mt-3 text-xs">
+              <span id="frChip" class="inline-flex items-center rounded-full px-3 py-1 bg-slate-100 t-s">Puntaje: <span id="frScore">0</span></span>
+              <p class="mt-1 t-s" id="frExplain">Completa las preguntas para estimar tu riesgo.</p>
+            </div>
+          </div>
+
+          <!-- Whooley + GAD-2 -->
+          <div class="rounded-2xl border card p-4">
+            <h4 class="text-lg font-semibold t-h">Tamizaje emocional</h4>
+            <p class="text-xs t-s">Whooley (depresión) y GAD-2 (ansiedad).</p>
+            <div class="mt-3 space-y-3 text-xs md:text-sm">
+              <div>
+                <p class="font-medium t-b">Whooley</p>
+                <label class="block mt-1 t-b">1) ¿Te has sentido con poco interés o placer?
+                  <select id="whooley1" class="mt-1 w-full rounded-xl border px-2 py-1.5">
+                    <option value="0">No</option>
+                    <option value="1">Sí</option>
+                  </select>
+                </label>
+                <label class="block mt-1 t-b">2) ¿Te has sentido triste, decaído/a o sin esperanza?
+                  <select id="whooley2" class="mt-1 w-full rounded-xl border px-2 py-1.5">
+                    <option value="0">No</option>
+                    <option value="1">Sí</option>
+                  </select>
+                </label>
+                <div class="mt-2">
+                  <span id="whooleyResult" class="inline-flex items-center rounded-full px-3 py-1 bg-slate-100 t-s">Respuestas aún incompletas</span>
+                </div>
+              </div>
+              <div class="pt-2 border-t">
+                <p class="font-medium t-b">GAD-2 (ansiedad)</p>
+                <p class="text-[0.7rem] t-s">Últimas 2 semanas (0 nada · 1 varios días · 2 más de la mitad · 3 casi todos los días).</p>
+                <label class="block mt-1 t-b">1) Nervioso/a, ansioso/a o al borde
+                  <select id="gad1" class="mt-1 w-full rounded-xl border px-2 py-1.5">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                  </select>
+                </label>
+                <label class="block mt-1 t-b">2) No poder parar o controlar la preocupación
+                  <select id="gad2" class="mt-1 w-full rounded-xl border px-2 py-1.5">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                  </select>
+                </label>
+                <div class="mt-2 text-xs">
+                  <span id="gadChip" class="inline-flex items-center rounded-full px-3 py-1 bg-slate-100 t-s">Puntaje: <span id="gadScore">0</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recomendaciones personalizadas -->
+      <div class="rounded-3xl card border p-6 shadow-soft">
+        <h3 class="text-2xl font-semibold t-h">Recomendaciones según tu perfil</h3>
+        <p class="text-sm t-s">Se generan a partir de IMC, riesgo cardiovascular, FINDRISC y tamizaje emocional.</p>
+        <div id="recoResumen" class="mt-3 text-sm t-b">
+          <p>Completa los datos de riesgo para ver sugerencias personalizadas.</p>
         </div>
       </div>
 
@@ -274,6 +444,46 @@
           <div class="mt-2 mini-bar"><div id="habitsFill" class="mini-fill" style="width:0%"></div></div>
           <div id="habitsGrid" class="mt-3 grid grid-cols-8 gap-2 text-xs"></div>
         </div>
+      </div>
+
+      <!-- Alimentos de bajo costo y recetas saludables -->
+      <div class="rounded-3xl card border p-6 shadow-soft">
+        <h3 class="text-2xl font-semibold t-h">Ideas de alimentos de bajo costo y recetas</h3>
+        <p class="text-sm t-s">Opciones sencillas y económicas. Ajusta por cultura, gustos y recomendaciones médicas.</p>
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+          <div>
+            <h4 class="font-semibold t-b">Alimentos base económicos</h4>
+            <ul class="mt-2 list-disc pl-5 space-y-1 t-b">
+              <li>Leguminosas: lentejas, fríjoles, garbanzos.</li>
+              <li>Cereales integrales: avena en hojuelas, arroz integral.</li>
+              <li>Huevos y pollo con piel retirada.</li>
+              <li>Verduras de temporada (repollo, zanahoria, pepino, tomate).</li>
+              <li>Frutas locales de estación (guayaba, banano, papaya, manzana cuando esté en oferta).</li>
+              <li>Grasas saludables: aceite vegetal (canola, girasol, oliva) en poca cantidad, maní o nueces sencillas.</li>
+              <li>Agua como bebida principal (evitar gaseosas y jugos azucarados).</li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-semibold t-b">Recetas rápidas</h4>
+            <details class="mt-2 rounded-xl border card p-3">
+              <summary class="cursor-pointer t-b">Bowl de lentejas con verduras</summary>
+              <p class="mt-2 t-b">Cocina lentejas con poco aceite, ajo y cebolla. Sirve con arroz integral y ensalada de repollo, zanahoria y tomate. Porción: 1/2 plato de verduras, 1/4 lentejas, 1/4 arroz.</p>
+            </details>
+            <details class="mt-2 rounded-xl border card p-3">
+              <summary class="cursor-pointer t-b">Desayuno de avena con fruta</summary>
+              <p class="mt-2 t-b">Avena cocida en agua o leche baja en grasa, endulza con fruta picada (banano o manzana), canela y unas semillas o maní.</p>
+            </details>
+            <details class="mt-2 rounded-xl border card p-3">
+              <summary class="cursor-pointer t-b">Salteado de pollo y verduras</summary>
+              <p class="mt-2 t-b">Trozos de pollo sin piel salteados con poca cantidad de aceite, mezclados con zanahoria, pimentón, cebolla y brócoli. Acompaña con arroz integral o papa al vapor.</p>
+            </details>
+            <details class="mt-2 rounded-xl border card p-3">
+              <summary class="cursor-pointer t-b">Snack saludable y económico</summary>
+              <p class="mt-2 t-b">Opciones: fruta entera, yogur natural sin azúcar, zanahoria en bastones con hummus sencillo (garbanzo licuado con limón y un poco de aceite).</p>
+            </details>
+          </div>
+        </div>
+        <p class="mt-3 text-xs t-s">Adapta por alergias, intolerancias y plan nutricional indicado por tu equipo tratante.</p>
       </div>
 
       <div class="rounded-3xl card border p-4 text-center text-sm shadow-soft">
@@ -467,6 +677,175 @@
     let chart=new Chart(ctx,{type:'line',data:{labels:wData.map(p=>p.date),datasets:[{label:'Peso (kg)',data:wData.map(p=>p.weight),borderWidth:2,tension:.35,borderColor:stroke(ctx),backgroundColor:'rgba(249,115,154,.15)',fill:true,pointRadius:2}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:false,grid:{color:'rgba(0,0,0,.06)'}},x:{grid:{display:false}}}}});
     function refreshChart(){chart.data.labels=wData.map(p=>p.date);chart.data.datasets[0].data=wData.map(p=>p.weight);chart.update();localStorage.setItem('weights',JSON.stringify(wData));}
     wAdd.onclick=()=>{if(!wDate.value||!wVal.value)return;const item={date:wDate.value,weight:+wVal.value};wData=wData.filter(p=>p.date!==item.date).concat(item).sort((a,b)=>a.date.localeCompare(b.date));refreshChart();};
+
+    /* --------- Riesgo CV, FINDRISC, Whooley y GAD-2 + recomendaciones --------- */
+    let cvRiskLevel='desconocido';
+    let findriscLevel='desconocido';
+    let whooleyPos=false;
+    let gad2Level='desconocido';
+
+    function updateRecs(){
+      const box=document.getElementById('recoResumen');
+      if(!box) return;
+      const parts=[];
+      const bmiNum=parseFloat((bmiVal.textContent||'').replace(',','.'));
+      if(isFinite(bmiNum)){
+        if(bmiNum>=30){
+          parts.push('<b>Peso y metabolismo:</b> tu IMC se encuentra en rango de obesidad. Se recomienda un déficit calórico moderado, aumentar movimiento diario y acompañamiento clínico.');
+        }else if(bmiNum>=25){
+          parts.push('<b>Peso y metabolismo:</b> tu IMC sugiere sobrepeso. Una meta inicial útil es perder 5–10% del peso en 3–6 meses con cambios de hábitos.');
+        }
+      }
+      if(cvRiskLevel==='alto' || cvRiskLevel==='muy alto'){
+        parts.push('<b>Riesgo cardiovascular:</b> el tamizaje sugiere riesgo elevado, por lo que es importante una valoración presencial, control de presión arterial, lípidos y dejar el tabaco si aplica.');
+      }else if(cvRiskLevel==='moderado'){
+        parts.push('<b>Riesgo cardiovascular:</b> conviene reforzar actividad física aeróbica + fuerza, baja de sal y reducción de grasas saturadas.');
+      }
+      if(findriscLevel==='ligeramente elevado'){
+        parts.push('<b>Riesgo metabólico:</b> riesgo ligeramente aumentado de diabetes. Prioriza más verduras, leguminosas y limitar azúcares añadidos.');
+      }else if(findriscLevel==='moderado' || findriscLevel==='alto'){
+        parts.push('<b>Riesgo metabólico:</b> el puntaje FINDRISC sugiere revisar glucosa en sangre (ayunas u otros estudios) según criterio médico y fortalecer cambios de estilo de vida.');
+      }
+      if(whooleyPos || gad2Level==='alto'){
+        parts.push('<b>Estado emocional:</b> tus respuestas sugieren posible depresión o ansiedad significativa. Es clave hablar con un profesional de salud mental. Si presentas ideas de hacerte daño, acude a servicios de urgencias o líneas de ayuda de inmediato.');
+      }else if(gad2Level==='moderado'){
+        parts.push('<b>Estado emocional:</b> ansiedad moderada; pueden ayudar respiración 4-7-8, higiene del sueño y técnicas de manejo del estrés, además de valorar apoyo profesional si persiste.');
+      }
+      if(!parts.length){
+        parts.push('Completa los cuestionarios de riesgo para ver un resumen personalizado.');
+      }
+      box.innerHTML=parts.map(p=>`<p class="mt-1">${p}</p>`).join('');
+    }
+
+    // Riesgo cardiovascular
+    const cvEdad=document.getElementById('cvEdad');
+    const cvSexo=document.getElementById('cvSexo');
+    const cvFuma=document.getElementById('cvFuma');
+    const cvPAS=document.getElementById('cvPAS');
+    const cvCol=document.getElementById('cvCol');
+    const cvDM=document.getElementById('cvDM');
+    const cvCalcBtn=document.getElementById('cvCalcBtn');
+    const cvResult=document.getElementById('cvResult');
+    const cvDetail=document.getElementById('cvDetail');
+
+    function calcCvRisk(){
+      if(!cvEdad) return;
+      const age=+cvEdad.value||0;
+      const sex=cvSexo.value;
+      const fuma=cvFuma.value==='si';
+      const pas=+cvPAS.value||0;
+      const col=+cvCol.value||0;
+      const dm=cvDM.checked;
+      let score=0;
+      if(age>=50) score++;
+      if(age>=60) score++;
+      if(sex==='M') score++;
+      if(fuma) score+=2;
+      if(pas>=140) score+=2;
+      if(dm) score+=2;
+      if(col>=240) score+=2;
+      let nivel='bajo', txt='Riesgo bajo (< 10% aprox.).', cls='bg-emerald-50 text-emerald-700';
+      if(score>=3 && score<=4){nivel='moderado';txt='Riesgo moderado; refuerza hábitos y control de presión, lípidos y glucosa.';cls='bg-amber-50 text-amber-700';}
+      if(score>=5 && score<=6){nivel='alto';txt='Riesgo alto; se recomienda valoración médica y seguimiento cercano.';cls='bg-orange-50 text-orange-700';}
+      if(score>=7){nivel='muy alto';txt='Riesgo muy alto; requiere control intensivo por personal de salud.';cls='bg-red-50 text-red-700';}
+      cvRiskLevel=nivel;
+      if(cvResult){
+        cvResult.textContent=`Nivel: ${nivel}`;
+        cvResult.className=`inline-flex items-center rounded-full px-3 py-1 text-xs md:text-sm ${cls}`;
+      }
+      if(cvDetail) cvDetail.textContent=txt;
+      updateRecs();
+    }
+    if(cvCalcBtn) cvCalcBtn.addEventListener('click',calcCvRisk);
+
+    // FINDRISC
+    const frInputs=document.querySelectorAll('.findriscQ');
+    const frCalcBtn=document.getElementById('frCalcBtn');
+    const frScoreSpan=document.getElementById('frScore');
+    const frExplain=document.getElementById('frExplain');
+    const frChip=document.getElementById('frChip');
+
+    function calcFindrisc(){
+      if(!frInputs.length) return;
+      let score=0;
+      let answered=0;
+      frInputs.forEach(sel=>{
+        const opt=sel.selectedOptions && sel.selectedOptions[0];
+        if(opt && opt.dataset.score!==undefined){
+          const s=+opt.dataset.score;
+          score+=s;
+          if(sel.value!=='') answered++;
+        }
+      });
+      if(frScoreSpan) frScoreSpan.textContent=score;
+      let nivel='bajo', txt='Riesgo bajo de desarrollar diabetes en los próximos 10 años.', cls='bg-emerald-50 text-emerald-700';
+      if(score>=7 && score<=11){nivel='ligeramente elevado';txt='Riesgo ligeramente elevado; conviene cuidar peso, alimentación y movimiento diario.';cls='bg-amber-50 text-amber-700';}
+      if(score>=12 && score<=14){nivel='moderado';txt='Riesgo moderado; considera consultar para valorar estudios de glucosa y plan de estilo de vida.';cls='bg-orange-50 text-orange-700';}
+      if(score>=15){nivel='alto';txt='Riesgo alto; se aconseja valoración médica y pruebas de laboratorio para descartar diabetes.';cls='bg-red-50 text-red-700';}
+      findriscLevel=nivel;
+      if(frChip){
+        frChip.className=`inline-flex items-center rounded-full px-3 py-1 text-xs md:text-sm ${cls}`;
+      }
+      if(frExplain){
+        frExplain.textContent=answered?txt:'Completa las preguntas para estimar tu riesgo.';
+      }
+      updateRecs();
+    }
+    if(frCalcBtn) frCalcBtn.addEventListener('click',calcFindrisc);
+    frInputs.forEach(sel=>sel.addEventListener('change',calcFindrisc));
+
+    // Whooley
+    const wh1=document.getElementById('whooley1');
+    const wh2=document.getElementById('whooley2');
+    const whooleyResult=document.getElementById('whooleyResult');
+    function calcWhooley(){
+      if(!wh1||!wh2) return;
+      const s=(+wh1.value||0)+(+wh2.value||0);
+      whooleyPos=s>0;
+      let txt='Respuestas aún incompletas.', cls='bg-slate-100 t-s';
+      if(s===0){
+        txt='Tamizaje negativo: sin indicios claros de depresión. Mantén tus estrategias de autocuidado.';
+        cls='bg-emerald-50 text-emerald-700';
+      }else{
+        txt='Tamizaje positivo: conviene valoración clínica para descartar o confirmar depresión.';
+        cls='bg-amber-50 text-amber-700';
+      }
+      if(whooleyResult){
+        whooleyResult.textContent=txt;
+        whooleyResult.className=`inline-flex items-center rounded-full px-3 py-1 text-xs md:text-sm ${cls}`;
+      }
+      updateRecs();
+    }
+    if(wh1) wh1.addEventListener('change',calcWhooley);
+    if(wh2) wh2.addEventListener('change',calcWhooley);
+
+    // GAD-2
+    const gad1=document.getElementById('gad1');
+    const gad2=document.getElementById('gad2');
+    const gadScoreSpan=document.getElementById('gadScore');
+    const gadChip=document.getElementById('gadChip');
+
+    function calcGad2(){
+      if(!gad1||!gad2) return;
+      const score=(+gad1.value||0)+(+gad2.value||0);
+      if(gadScoreSpan) gadScoreSpan.textContent=score;
+      let nivel='bajo', cls='bg-emerald-50 text-emerald-700', txt='Ansiedad mínima o ausente según GAD-2.';
+      if(score>=3 && score<=5){nivel='moderado';cls='bg-amber-50 text-amber-700';txt='Ansiedad moderada; observa cómo interfiere en tu vida y considera apoyo profesional si se mantiene.';}
+      if(score>=6){nivel='alto';cls='bg-red-50 text-red-700';txt='Ansiedad alta; valora consulta en salud mental para evaluación detallada.';}
+      gad2Level=nivel;
+      if(gadChip){
+        gadChip.className=`inline-flex items-center rounded-full px-3 py-1 text-xs md:text-sm ${cls}`;
+        gadChip.title=txt;
+      }
+      updateRecs();
+    }
+    if(gad1) gad1.addEventListener('change',calcGad2);
+    if(gad2) gad2.addEventListener('change',calcGad2);
+
+    // Llamadas iniciales
+    updateRecs();
+    calcWhooley();
+    calcGad2();
   </script>
 </body>
 </html>
